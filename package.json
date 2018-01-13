@@ -20,15 +20,18 @@
   },
   "dependencies": {
     "expo": "^24.0.2",
+    "impagination": "^1.0.0-alpha.3",
+    "native-base": "^2.3.6",
     "react": "16.2.0",
     "react-native": "^0.51.0",
     "react-native-elements": "^0.18.5",
     "react-native-material-kit": "^0.5.1",
-    "react-native-paginated-listview": "^1.0.2",
-    "react-native-pagination": "^1.2.8",
-    "react-navigation": "^1.0.0-beta.11",
+    "react-native-vector-icons": "^4.5.0",
+    "react-navigation": "^1.0.0-beta.26",
     "react-redux": "^5.0.6",
     "redux-logger": "^3.0.6",
-    "redux-thunk": "^2.2.0"
+    "redux-persist": "^5.4.0",
+    "redux-thunk": "^2.2.0",
+    "util": "^0.10.3"
   }
 }

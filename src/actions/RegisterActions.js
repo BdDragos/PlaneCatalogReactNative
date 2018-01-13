@@ -8,7 +8,7 @@ export function registerAction(data) {
             console.log(response);
             if (!response.ok) {
                 Alert.alert('ERROR', 'User already exists');
-                dispatch(loginFailed('User already exists'));
+                dispatch(registerFailed('User already exists'));
             } else {
                 Alert.alert('OK', 'Registering is a success');
                 return response.json().then(data => {

@@ -66,20 +66,18 @@ export function deleteAction(data, token) {
     ]);
 }
 
-export function insertAction(data, token) {
-    return dispatch => Promise.all([
-        dispatch(getStarted()),
-        insertService(data, token).then(response => {
-            if (!response.ok) {
-                Alert.alert('ERROR', 'The item already exists');
-                dispatch(getFailed('Error'));
-            } else {
-                return response.json().then(data => {
-                    dispatch(insertSuccess(data));
-                });
-            }
-        })
-    ]);
+export const datasetstateSet = obj => {
+    return {
+        type: 'DATASETSTATE_SET',
+        obj
+    }
+}
+
+export const setDataset = obj => {
+    return {
+        type: 'DATASET_SET',
+        obj
+    }
 }
 
 export const getStarted = () => {
@@ -101,6 +99,12 @@ export const getSuccess = obj => {
     }
 }
 
+export const fontFinishedLoad = () => {
+    return {
+        type: 'FONT_OVER'
+    }
+}
+
 export const getFailed = obj => {
     return {
         type: 'GET_FAIL',
@@ -108,33 +112,12 @@ export const getFailed = obj => {
     }
 }
 
-export const insertSuccess = obj => {
+export const deleteSuccess = () => {
     return {
-        type: 'INSERT_SUCCESS',
-        obj
+        type: 'DELETE_SUCCESS'
     }
 }
 
-export const updateSuccess = obj => {
-    return {
-        type: 'UPDATE_SUCCESS',
-        obj
-    }
-}
-
-export const deleteSuccess = obj => {
-    return {
-        type: 'DELETE_SUCCESS',
-        obj
-    }
-}
-
-export const newViewable = obj => {
-    return {
-        type: 'NEW_VIEWABLE',
-        obj
-    }
-}
 
 
 

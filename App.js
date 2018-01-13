@@ -8,14 +8,15 @@ import Routes from "./src/core/routes";
 import { authReducer } from "./src/reducers/LoginReducer";
 import { registerReducer } from './src/reducers/RegisterReducer';
 import { planeReducer } from './src/reducers/PlaneListReducer';
-import { getAllAction } from './src/actions/PlaneListActions';
-
+import { insertReducer } from './src/reducers/InsertReducer';
+import { persistStore, autoRehydrate } from 'redux-persist'; // add new import
 
 const AppNavigator = StackNavigator(Routes)
 
 const loginState = AppNavigator.router.getStateForAction(AppNavigator.router.getActionForPathAndParams('Login'));
 const registerState = AppNavigator.router.getStateForAction(AppNavigator.router.getActionForPathAndParams('Register'));
 const planeListState = AppNavigator.router.getStateForAction(AppNavigator.router.getActionForPathAndParams('PlaneList'));
+const insertState = AppNavigator.router.getStateForAction(AppNavigator.router.getActionForPathAndParams('Insert'));
 
 const navReducer = (state, action) => {
   const newState = AppNavigator.router.getStateForAction(action, state);
@@ -44,17 +45,25 @@ const mapStateToProps = (state) => ({
 const AppWithNavigationState = connect(mapStateToProps)(App);
 
 const initialState = {
-  auth: { isLoading: false, error: null, username: '', password: '' }
+  auth: { isLoading: false, error: null, username: '', password: '' },
+  insert: { wasInserted: false }
 };
 
 const rootReducer = combineReducers
   (
   {
-    nav: navReducer, auth: authReducer, register: registerReducer, planeList: planeReducer
+    nav: navReducer, auth: authReducer, register: registerReducer, planeList: planeReducer, insert: insertReducer
   }
   );
 
 let store = createStore(rootReducer, initialState, applyMiddleware(thunk));
+
+configureStore = (onComplete) => {
+  const store = autoRehydrate()(createStoreWithMiddleware)(reducers);
+  persistStore(store, { storage: AsyncStorage }, onComplete);
+
+  return store;
+};
 
 export default function Root() {
   return (

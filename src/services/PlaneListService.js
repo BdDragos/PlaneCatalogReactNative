@@ -2,24 +2,10 @@ import { httpApiUrl } from '../core/api';
 import { getLogger } from "../core/utils";
 
 
-function createStringFromTemplate(template, variables) {
-    return template.replace(new RegExp("\{([^\{]+)\}", "g"), function (_unused, varName) {
-        return variables[varName];
-    });
-}
-
 export const getService = (token, currentPage) => {
 
-    const url = 'desktop-28cnhan:8090/InventoryManagement/api/plane/allPagined?pageNumber={pageNumber}&_pageSize={_pageSize}&pageSize={pageSize}'
-
-    var urlConc = createStringFromTemplate(
-        url,
-        {
-            pageNumber: currentPage,
-            _pageSize: 10,
-            pageSize: 10,
-        }
-    )
+    const pagesize = 10
+    const url = `${httpApiUrl}/api/plane/allPagined?pageNumber=${currentPage}&_pageSize=${pageSize}&pageSize=${pageSize}`
 
     return fetch(urlConc, {
         method: 'GET',
@@ -51,6 +37,7 @@ export const getAllService = (token) => {
 
 export const insertService = (data, token) => {
 
+    console.log(data)
     return fetch(`${httpApiUrl}/api/plane/AddPlaneReact`, {
         method: 'POST',
         headers: {

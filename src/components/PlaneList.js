@@ -1,85 +1,122 @@
 import React, { Component } from 'react';
-import { ActivityIndicator, TouchableHighlight, Text } from 'react-native';
-import { getLogger, issueToText } from '../core/utils';
-import styles from '../core/styles';
-import { Card, Button, Header } from "react-native-elements";
 import { connect } from 'react-redux'
-import { FormLabel, FormInput } from "react-native-elements";
-import { getAction, getAllAction } from '../actions/PlaneListActions';
-import { AppRegistry, StyleSheet, View, FlatList, } from 'react-native';
+import { getAction, getAllAction, fontFinishedLoad, datasetstateSet, setDataset, changeDeleted } from '../actions/PlaneListActions';
+import { View } from 'react-native';
 import _ from 'lodash';
-import Pagination, { Icon, Dot } from 'react-native-pagination';
+import {
+    Button,
+    Header,
+    Container,
+    Title,
+    Content,
+    Spinner, Left, Body, Right, Icon
+} from 'native-base';
+
+import { httpApiUrl } from '../core/api';
+import { Font } from 'expo';
+import Dataset from 'impagination';
+import Expo from 'expo';
+import PlaneListElement from './PlaneListElement';
 
 class PlaneListComponent extends Component {
     constructor(props) {
         super(props);
-        this.getItems = this.getItems.bind(this)
-        this._keyExtractor = this._keyExtractor.bind(this)
-        this.onViewableItemsChanged = this.onViewableItemsChanged.bind(this)
-
-        this.props.dispatch(getAllAction(this.props.token))
+        this.setCurrentReadOffset = this.setCurrentReadOffset.bind(this)
+        this.setupImpagination = this.setupImpagination.bind(this)
+        this.renderItem = this.renderItem.bind(this)
     }
 
-    _keyExtractor = (item, index) => item.ID;
+    async componentWillMount() {
+        await Expo.Font.loadAsync({
+            'Roboto_medium': require('../core/fonts/Roboto_medium.ttf')
+        });
+        this.props.dispatch(fontFinishedLoad());
+        this.setupImpagination();
+        this.props.dataset.reset(0)
+    }
 
-    _renderItem = ({ item }) => {
-        return (
-            <Card
-                title={item.planeName}>
-                <Text style={{ marginBottom: 10 }}>
-                    The idea with React Native Elements is more about component structure than actual design.
-            </Text>
-                <Button
-                    icon={{ name: 'code' }}
-                    backgroundColor='#03A9F4'
-                    fontFamily='Lato'
-                    buttonStyle={{ borderRadius: 0, marginLeft: 0, marginRight: 0, marginBottom: 0 }}
-                    title='UPDATE' />
-            </Card>)
-    };
+    setupImpagination() {
 
-    onViewableItemsChanged = ({ viewableItems, changed }) => this.props.dispatch(newViewable(viewableItems))
+        let _this = this;
+        let _dispatch = this.props.dispatch;
+        let dataset = new Dataset({
+            pageSize: 10,
 
-    getItems(currentPage) {
-        const { dispatch, token } = this.props
+            // Anytime there's a new state emitted, we want to set that on
+            // the componets local state.
+            observe: (datasetState) => {
+                _dispatch(datasetstateSet(datasetState))
+            },
 
 
-        dispatch(getAction(token, currentPage)).then(() => {
-            if (this.props.error === null && this.props.isLoading === false) {
-                return;
+            // Where to fetch the data from.
+            fetch(pageOffset, pageSize) {
+
+                const urlc = `${httpApiUrl}/api/plane/allPagined?pageNumber=${pageOffset}&pageSize=${pageSize}`
+
+                return fetch(urlc, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Basic ' + _this.props.token,
+                    }
+                })
+                    .then(response => response.json())
+                    .catch((error) => {
+                        console.error(error);
+                    });
             }
         });
+
+        // Set the readOffset to the first record in the state
+        dataset.setReadOffset(0);
+        this.props.dispatch(setDataset(dataset))
+    }
+
+    renderItem() {
+        if (this.props.dataset) {
+            return this.props.datasetState.map(record => {
+                if (!record.isSettled) {
+                    return <Spinner key={Math.random()} />;
+                }
+
+                return <PlaneListElement record={record} key={record.content.ID} {...this.props} />;
+            });
+        }
+        return null;
+    }
+
+    setCurrentReadOffset = (event) => {
+        let itemHeight = 402;
+        let currentOffset = Math.floor(event.nativeEvent.contentOffset.y);
+        let currentItemIndex = Math.ceil(currentOffset / itemHeight);
+
+        this.props.dataset.setReadOffset(currentItemIndex);
     }
 
     render() {
-
-        const { theList, currentPage } = this.props
-        const s = StyleSheet.create({
-            container:
-                {
-                    flex: 1,
-                    backgroundColor: "grey",//<-- use with "dotThemeLight"
-                },
-        });
-
+        if (!this.props.fontLoaded) {
+            return <Expo.AppLoading />;
+        }
         return (
-            <View style={[s.container]}>
-                <FlatList
-                    data={theList}
-                    ref={r => this.refs = r}
-                    keyExtractor={this._keyExtractor}
-                    renderItem={this._renderItem}
-                    onViewableItemsChanged={this.onViewableItemsChanged.bind(this)}//need this
-                />
+            <Container>
+                <Header>
+                    <Left>
+                        <Button transparent>
+                            <Icon name='menu' />
+                        </Button>
+                    </Left>
+                    <Body>
+                        <Title>Plane List</Title>
+                    </Body>
+                    <Right />
+                </Header>
 
-                <Pagination
-                    // dotThemeLight //<--use with backgroundColor:"grey"
-                    listRef={this.refs}//to allow React Native Pagination to scroll to item when clicked  (so add "ref={r=>this.refs=r}" to your list)
-                    paginationVisibleItems={this.props.viewableItems}//needs to track what the user sees
-                    paginationItems={theList}//pass the same list as data
-                    paginationItemPadSize={5} //num of items to pad above and below your visable items
-                />
-            </View>
+                <Content scrollEventThrottle={300} onScroll={this.setCurrentReadOffset} removeClippedSubviews={true}>
+                    {this.renderItem()}
+                </Content>
+            </Container>
         );
     }
 }
@@ -88,10 +125,10 @@ const mapStateToProps = state => {
     return {
         error: state.planeList.error,
         isLoading: state.planeList.isLoading,
-        theList: state.planeList.theList,
-        currentPage: state.planeList.currentPage,
         token: state.auth.token,
-        viewableItems: state.planeList.viewableItems
+        fontLoaded: state.planeList.fontLoaded,
+        dataset: state.planeList.dataset,
+        datasetState: state.planeList.datasetState,
     };
 };
 
